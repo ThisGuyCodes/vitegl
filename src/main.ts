@@ -58,10 +58,10 @@ gl.uniformMatrix4fv(
 );
 
 const square = initSquare(gl);
-gl.bindBuffer(gl.ARRAY_BUFFER, square.position);
+gl.bindBuffer(gl.ARRAY_BUFFER, square.position.buffer);
 gl.vertexAttribPointer(
   progInfo.attribLocations.vertexPosition,
-  2,
+  3,
   gl.FLOAT,
   false,
   0,
@@ -74,37 +74,71 @@ let viewMat = view(mat4.create(),
   [-0.0, 0.0, -8.0],
 )
 
-document.onkeydown = function(e: KeyboardEvent) {
-  switch (e.key) {
-    case 'd': {
-      mat4.translate(viewMat, viewMat, [-0.1, 0.0, 0.0]);
-      break;
-    };
-    case 'a': {
-      mat4.translate(viewMat, viewMat, [0.1, 0.0, 0.0]);
-      break;
-    };
-    case 'Shift': {
-      mat4.translate(viewMat, viewMat, [0.0, 0.1, 0.0]);
-      break;
-    };
-    case ' ': {
-      mat4.translate(viewMat, viewMat, [0.0, -0.1, 0.0]);
-      break;
-    };
-    case 'w': {
-      mat4.translate(viewMat, viewMat, [0.0, 0.0, 0.1]);
-      break;
-    };
-    case 's': {
-      mat4.translate(viewMat, viewMat, [0.0, 0.0, -0.1]);
-      break;
-    };
+const cmdState: Record<string, boolean> = {
+  forward: false,
+  left: false,
+  backward: false,
+  right: false,
+  up: false,
+  down: false,
+}
+
+const keysMap: Record<string, string> = {
+  w: 'forward',
+  a: 'left',
+  s: 'backward',
+  d: 'right',
+  ' ': 'up',
+  Shift: 'down',
+}
+
+document.onkeydown = function (e: KeyboardEvent) {
+  const mapping = keysMap[e.key];
+  if (mapping !== undefined) {
+    cmdState[mapping] = true;
   }
+}
+
+document.onkeyup = function (e: KeyboardEvent) {
+  const mapping = keysMap[e.key];
+  if (mapping !== undefined) {
+    cmdState[mapping] = false;
+  }
+}
+
+const timeFactor = 0.01;
+
+const movement = function (delta: number, mat: mat4) {
+  const adj = delta * timeFactor;
+  let leftRight = 0;
+  let downUp = 0;
+  let forwardBack = 0;
+  if (cmdState.forward) {
+    forwardBack += adj;
+  };
+  if (cmdState.backward) {
+    forwardBack -= adj;
+  };
+  if (cmdState.left) {
+    leftRight += adj;
+  };
+  if (cmdState.right) {
+    leftRight -= adj;
+  };
+  if (cmdState.down) {
+    downUp += adj;
+  };
+  if (cmdState.up) {
+    downUp -= adj;
+  };
+  mat4.translate(mat, mat,
+    [leftRight, downUp, forwardBack]);
 }
 
 const tick = function (delta: number, gl: WebGL2RenderingContext) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  movement(delta, viewMat);
 
   gl.uniformMatrix4fv(
     progInfo.uniformLocations.modelViewMatrix,
@@ -112,7 +146,7 @@ const tick = function (delta: number, gl: WebGL2RenderingContext) {
     viewMat,
   );
 
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, square.position.points);
 
   delta = Math.round(delta);
   if (delta !== lastTime) {
