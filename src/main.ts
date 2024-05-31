@@ -118,10 +118,13 @@ document.onkeyup = function (e: KeyboardEvent) {
 
 const timeFactor = 0.01;
 
+let rotYCam = 0;
 let rotCam = mat4.create();
-mat4.fromYRotation(rotCam, 0);
+mat4.fromRotation(rotCam, 0, [0,0,0]);
 let transCam = mat4.create();
 mat4.fromTranslation(transCam, [0, 0, -8]);
+
+let transCamVec = vec3.create();
 
 const movement = function (delta: number) {
   const adj = delta * timeFactor;
@@ -153,15 +156,13 @@ const movement = function (delta: number) {
   if (cmdState.turnRight) {
     turn += adj*0.5;
   };
-  mat4.rotateY(rotCam, rotCam, turn);
-  const rotQuat = mat4.getRotation(quat.create(), rotCam);
-  let angle = vec3.create();
-  const rotation = quat.getAxisAngle(angle, rotQuat);
-  console.log(rotation);
-  console.log(angle);
-  let transVec = vec3.rotateY(vec3.create(), [leftRight, downUp, forwardBack], angle, -rotation);
-  mat4.translate(transCam, transCam, transVec);
+  rotYCam += turn;
+  rotYCam %= Math.PI * 2;
+  mat4.fromRotation(rotCam, rotYCam, [0,1,0]);
+  vec3.rotateY(transCamVec, [leftRight, downUp, forwardBack], [0,1,0], -rotYCam);
 
+  mat4.translate(transCam, transCam, transCamVec);
+  mat4.fromRotation(rotCam, rotYCam, [0,1,0]);
   mat4.multiply(viewMat, rotCam, transCam);
 }
 
@@ -175,7 +176,7 @@ const tick = function (delta: number, gl: WebGL2RenderingContext) {
     false,
     viewMat,
   );
-
+``
   gl.uniformMatrix4fv(
     progInfo.uniformLocations.projectionMatrix,
     false,
