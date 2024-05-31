@@ -12,7 +12,7 @@ const squarePosition = function (gl: WebGL2RenderingContext): { buffer: WebGLBuf
         -2.0, -2.0, -4.0,
     ]);
 
-    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+    gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
 
     return { buffer: positionBuffer, points: positions.length / 3 };
 }
@@ -20,5 +20,5 @@ const squarePosition = function (gl: WebGL2RenderingContext): { buffer: WebGLBuf
 export const initSquare = function (gl: WebGL2RenderingContext) {
     return {
         position: squarePosition(gl),
-    }
+    };
 }
